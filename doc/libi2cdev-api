@@ -1,0 +1,113 @@
+@verbatim
+
+libi2cdev-api
+
+(C) Copyright, Violin Memory, Inc, 2014
+
+Author: Danielle Costantino
+
+Initialization sequence
+-----------------------
+
+The i2c address and bus is selected before each transaction. You do not
+need to pass the address byte; instead, it is set inside of your
+"SMBusDevice *client", and is initialized after a call to
+dev_i2c_new_device.
+
+The I2C dev interface allows for auto initializing of devices stored in
+configuration files "/etc/i2cdiscov.conf"and files in
+"/etc/i2cdiscov.d/" directory. Devices found here are automatically
+loaded during startup and initialized as needed to complete paths. In
+order to use the I2C-dev interface device paths must be specified. Paths
+are found through scanning the sysfs interface for compatible devices.
+Because this file system has changed throughout the years, a standard
+based on the latest kernel was selected which uses devices stored in the
+/sys/bus/i2c/devices/ path. The formula used to represent these chips is
+based on precedent established by the LM-sensors scanning interface
+which specifies the: chip prefix – bus type – bus ID – address.
+The adapted version uses chip prefix – bus type – bus path –
+address. Examples as follows: pca9541-i2c-1:0.1-0x73
+pca9547-i2c-1:0.2:0.0-0x71 lm75-i2c-1:0.2:0.0-0x73
+
+Bus discovery and mapping detail
+--------------------------------
+
+Name: /sys/class/i2c-dev/i2c-*/device/name
+
+If name is in the format of ‘i2c-%d-mux (chan_id %d)’
+
+Then parent = i2c-%d
+Then mux channel = (chan_id %d)
+
+Example directory structure:
+
+root@linux:/sys/class/i2c-dev # tree -l -L 4
+.
++-- i2c-0
+¦   +-- dev
+¦   +-- device -> ../../../devices/soc.0/ffe03000.i2c/i2c-0
+¦   ¦   +-- 0-0070
+¦   ¦   ¦   +-- bus -> ../../../../../bus/i2c
+¦   ¦   ¦   +-- driver -> ../../../../../bus/i2c/drivers/pca954x
+¦   ¦   ¦   +-- modalias
+¦   ¦   ¦   +-- name
+¦   ¦   ¦   +-- subsystem -> ../../../../../bus/i2c
+¦   ¦   ¦   +-- uevent
+¦   ¦   +-- bus -> ../../../../bus/i2c
+¦   ¦   +-- i2c-2
+¦   ¦   ¦   +-- bus -> ../../../../../bus/i2c
+¦   ¦   ¦   +-- i2c-dev:i2c-2 -> ../../../../../class/i2c-dev/i2c-2
+¦   ¦   ¦   +-- name
+¦   ¦   ¦   +-- subsystem -> ../../../../../bus/i2c
+¦   ¦   ¦   +-- uevent
+.    .    .
+.    .    .
+.    .    .
+¦   ¦   +-- i2c-dev:i2c-0 -> ../../../../class/i2c-dev/i2c-0
+¦   ¦   +-- name
+¦   ¦   +-- subsystem -> ../../../../bus/i2c
+¦   ¦   +-- uevent
+¦   +-- subsystem -> ../../i2c-dev
+¦   +-- uevent
+
+
+When
+
+root@linux:/sys/class/i2c-dev # cat ./i2c-0/uevent
+MAJOR=89
+MINOR=0
+DEVNAME=i2c-0
+PHYSDEVPATH=/devices/soc.0/ffe03000.i2c/i2c-0
+PHYSDEVBUS=i2c
+
+The parent device is determined by reading the link contained in
+
+/sys/class/i2c-dev/i2c-*/device
+
+And traversing up one device. Then reading the device info looking for the dev name.
+When the device name matches “i2c” then it has found the i2c root hub.
+The new method of accessing i2c devices depends on a path parent algorithm.
+If an i2c device is located on an i2c mux, (e.g. its parent is the root i2c device at i2c-dev0)
+then it is identified by the first initialized mux off the parent as mux id ‘0’.
+If the device you need to communicate to is on the 3rd channel from that mux the routing path would be ‘0:0.2’.
+Suppose the physical address of the device is 0x50 (always written in 7bit hex notation),
+then the full device path passed to the library would be ‘0:0.2:0x50’.
+
+
+API Usage
+---------
+
+The main header file containing all functions and structures
+is 'i2c-uapi.h'. The library libi2cdev supports the functions defined in
+this header. This library depends on libi2c and must be built together
+with libi2cdev.
+
+To get the first adapter structure one calls "dev_i2c_new_adapter"
+with the adapter number of interest. To get the adapter id/number the
+path based lookup can be used. In order to create the initial device,
+one must call "dev_i2c_new_device" this function requires an adapter
+structure to be passed into it. When one is ready to exit the program
+and de-allocate the resources, call "dev_i2c_delete" on the
+allocated client device.
+
+@endverbatim
