@@ -82,8 +82,6 @@ dev_bus_adapter **adapter_global_array = NULL;
 size_t adapter_global_count = 0;
 size_t device_global_count = 0;
 
-extern unsigned long libi2csmbmagic;
-
 static int parse_config_file(FILE *input, const char *name);
 
 /**
@@ -421,8 +419,7 @@ void free_dev_chip_list(dev_chip_head *list)
 {
     dev_chip *chip = NULL;
     if (list != NULL) {
-        while (!SLIST_EMPTY(list)) {
-            chip = SLIST_FIRST(list);
+        while ((chip = SLIST_FIRST(list)) != NULL) {
             SLIST_REMOVE_HEAD(list, node);
             dev_free_chip(&chip);
         }
@@ -432,17 +429,12 @@ void free_dev_chip_list(dev_chip_head *list)
 static void free_dev_client_list(dev_client_user_list *list)
 {
     struct dev_client_list *client_list = NULL;
-    if (list != NULL) {
-        while (!LIST_EMPTY(list)) {
-            client_list = LIST_FIRST(list);
-            if (client_list) {
-                if (client_list->client) {
-                    client_list->client->adapter = NULL;
-                }
-                LIST_REMOVE(client_list, node);
-                free(client_list);
-            }
+    while ((list != NULL) && (client_list = LIST_FIRST(list)) != NULL) {
+        LIST_REMOVE(client_list, node);
+        if (client_list->client) {
+            client_list->client->adapter = NULL;
         }
+        free(client_list);
     }
 }
 
@@ -453,34 +445,38 @@ void free_adapter_val(dev_bus_adapter **adapter)
 
         if (LIST_EMPTY(&(*adapter)->children)) {
 
-            if ((*adapter)->i2c_adapt.fd >= 0) {
-                close((*adapter)->i2c_adapt.fd);
-            }
-
             free_dev_client_list(&((*adapter)->user_clients));
-            free_dev_chip_list(&((*adapter)->clients));
 
-            dev_free_bus_id(&(*adapter)->bus);
-            if ((*adapter)->path != NULL) {
-                free((*adapter)->path);
+            if ((adapter) && (*adapter)) {
+
+                if ((*adapter)->i2c_adapt.fd >= 0) {
+                    close((*adapter)->i2c_adapt.fd);
+                }
+
+                free_dev_chip_list(&((*adapter)->clients));
+
+                dev_free_bus_id(&(*adapter)->bus);
+                if ((*adapter)->path != NULL) {
+                    free((*adapter)->path);
+                }
+                (*adapter)->path = NULL;
+                if ((*adapter)->name != NULL) {
+                    free((*adapter)->name);
+                }
+                (*adapter)->name = NULL;
+                if ((*adapter)->devpath != NULL) {
+                    free((*adapter)->devpath);
+                }
+                (*adapter)->devpath = NULL;
+                if ((*adapter)->subsystem != NULL) {
+                    free((*adapter)->subsystem);
+                }
+                (*adapter)->subsystem = NULL;
+                if ((*adapter)->parent_name != NULL) {
+                    free((*adapter)->parent_name);
+                }
+                (*adapter)->parent_name = NULL;
             }
-            (*adapter)->path = NULL;
-            if ((*adapter)->name != NULL) {
-                free((*adapter)->name);
-            }
-            (*adapter)->name = NULL;
-            if ((*adapter)->devpath != NULL) {
-                free((*adapter)->devpath);
-            }
-            (*adapter)->devpath = NULL;
-            if ((*adapter)->subsystem != NULL) {
-                free((*adapter)->subsystem);
-            }
-            (*adapter)->subsystem = NULL;
-            if ((*adapter)->parent_name != NULL) {
-            	free((*adapter)->parent_name);
-            }
-            (*adapter)->parent_name = NULL;
 
             if (adapter != NULL && *adapter != NULL) {
                 free(*adapter); /* actually deallocate memory */
@@ -494,8 +490,7 @@ void free_adapter_list(dev_bus_adapter_head *list)
 {
     dev_bus_adapter *adapter = NULL;
     if (list != NULL) {
-        while (!LIST_EMPTY(list)) {
-            adapter = LIST_FIRST(list);
+        while ((adapter = LIST_FIRST(list)) != NULL) {
             if (!LIST_EMPTY(&adapter->children)) {
                 free_adapter_list(&adapter->children);
             }
@@ -523,7 +518,9 @@ static bool init_once = false;
 int i2cdev_init(FILE *input)
 {
     int res = 0;
-
+    if (get_libi2cdev_state() == LIB_SMB_READY) {
+        return 0;
+    }
     set_libi2cdev_state(LIB_SMB_BUSY);
 
     if (init_once == false) {
@@ -590,11 +587,10 @@ int i2cdev_rescan(void)
 {
     int res = 0;
 
-    i2cdev_rescan_count++;
-
     if (get_libi2cdev_state() == LIB_SMB_UNINIIALIZED) {
         return i2cdev_init(NULL);
     } else if (get_libi2cdev_state() == LIB_SMB_READY) {
+        devi2c_debug(NULL, "Rescanning I2C bus structure - total previous rescan count = %d", i2cdev_rescan_count);
         set_libi2cdev_state(LIB_SMB_BUSY);
 
         free_adapter_list(dev_bus_list_headp);
@@ -607,6 +603,8 @@ int i2cdev_rescan(void)
         if ((res = gather_i2c_dev_busses()) < 0) {
             goto exit_cleanup;
         }
+        i2cdev_rescan_count++;
+        libi2cdev_clear_invalidate_flag();
         set_libi2cdev_state(LIB_SMB_READY);
         return 0;
     } else if (get_libi2cdev_state() == LIB_SMB_BUSY || get_libi2cdev_state() == LIB_SMB_UNKNOWN) {
@@ -888,6 +886,9 @@ void i2cdev_cleanup(void)
     int i = 0;
     dev_config_chip *chipptr = NULL;
 
+    if (get_libi2cdev_state() == LIB_SMB_UNINIIALIZED) {
+        return;
+    }
     set_libi2cdev_state(LIB_SMB_NOT_READY);
 
     if (p_dev_config_list_head) {

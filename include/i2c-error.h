@@ -23,17 +23,14 @@
 #define I2CDEV_ERR_EPROTO     9 /* Slave does not conform to I2C/SMBus protocol */
 #define I2CDEV_ERR_ETIMEDOUT 10 /* I2C Operation timed out */
 
-#define LIB_SMB_I2C_MAGIC	0x736D6232
-#define LIB_SMB_I2C_POISON	0x6E736D62
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-/*
- * This enum defines the library's internal state
- * LIB_SMB_BUSY is for internal state tracking / debugging
- */
+/* Magic number definition must be in sync with enum below */
+#define LIB_SMB_I2C_MAGIC   0x736D6232
+#define LIB_SMB_I2C_POISON  0x6E736D62
+/* This enum defines the library's internal state */
 typedef enum i2csmbmagic_e {
     LIB_SMB_UNINIIALIZED = 0,
     LIB_SMB_BUSY = 1, /**< Indicates that the library is busy but no fault has occurred */
@@ -59,6 +56,10 @@ extern void (*dev_parse_error_wfn) (const char *err, const char *filename, int l
 extern void (*dev_fatal_error) (const char *proc, const char *err);
 
 extern FILE *libi2cdev_stderr;
+
+extern void libi2cdev_invalidate_cache(void);
+extern void libi2cdev_clear_invalidate_flag(void);
+extern bool libi2cdev_check_cache_is_valid(void);
 
 extern enum i2csmbmagic_e get_libi2cdev_state(void);
 extern int set_libi2cdev_state(enum i2csmbmagic_e state);

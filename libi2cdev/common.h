@@ -61,6 +61,23 @@
 })
 #endif
 
+/**
+ * Divide positive or negative dividend by positive divisor and round
+ * to closest integer. Result is undefined for negative divisors and
+ * for negative dividends if the divisor variable type is unsigned.
+ */
+#ifndef DIV_ROUND_CLOSEST
+#define DIV_ROUND_CLOSEST(x, divisor)                   \
+({                                                      \
+    __typeof__(x) __x = x;                              \
+    __typeof__(divisor) __d = divisor;                  \
+    (((__typeof__(x)) - 1) > 0 ||                       \
+     ((__typeof__(divisor)) - 1) > 0 || (__x) > 0) ?    \
+        (((__x) + ((__d) / 2)) / (__d)) :               \
+        (((__x) - ((__d) / 2)) / (__d));                \
+})
+#endif
+
 static inline void p_safe_free(void **pointerp)
 {
     /* check if pointer to pointer is null */

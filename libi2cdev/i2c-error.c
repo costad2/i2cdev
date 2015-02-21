@@ -34,8 +34,10 @@ void (*dev_fatal_error) (const char *proc, const char *err) = i2cdev_default_fat
 
 FILE *libi2cdev_stderr = NULL;
 
-static volatile unsigned long libi2csmbmagic = LIB_SMB_UNINIIALIZED;
+static unsigned long libi2csmbmagic = LIB_SMB_UNINIIALIZED;
 enum i2csmbmagic_e *p_i2csmbmagic_state = (enum i2csmbmagic_e *)&libi2csmbmagic;
+
+static bool i2cdev_rescan_required = false;
 
 const char *i2cerrorlist[] = {
     /* Invalid error code    */ "Unknown error",
@@ -81,39 +83,50 @@ void i2cdev_default_fatal_error(const char *proc, const char *err)
     devi2c_err(NULL, "Fatal error in `%s': %s", proc, err);
     assert(false);
 }
-static int i2c_atomic_magic = 0;
 
 int set_libi2cdev_state(enum i2csmbmagic_e state)
 {
-    if (i2c_atomic_magic == 0) {
-        i2c_atomic_magic++;
-        libi2csmbmagic = state;
-        i2c_atomic_magic--;
-        return 0;
+    libi2csmbmagic = state;
+    return 0;
+}
+
+bool libi2cdev_check_cache_is_valid(void)
+{
+    if ((i2cdev_rescan_required == true) && (get_libi2cdev_state() == LIB_SMB_READY)) {
+        return false;
+    } else {
+        return true;
     }
-    return -EBUSY;
+}
+
+void libi2cdev_invalidate_cache(void)
+{
+    i2cdev_rescan_required = true;
+}
+
+void libi2cdev_clear_invalidate_flag(void)
+{
+    i2cdev_rescan_required = false;
 }
 
 enum i2csmbmagic_e get_libi2cdev_state(void)
 {
-    if (i2c_atomic_magic == 0) {
-        switch (libi2csmbmagic) {
-            case LIB_SMB_UNINIIALIZED:
-                return LIB_SMB_UNINIIALIZED;
-            break;
-            case LIB_SMB_BUSY:
-                return LIB_SMB_BUSY;
-            break;
-            case LIB_SMB_READY:
-                return LIB_SMB_READY;
-            break;
-            case LIB_SMB_NOT_READY:
-                return LIB_SMB_NOT_READY;
-            break;
-            default:
-                return LIB_SMB_UNKNOWN;
-            break;
-        }
+    switch (libi2csmbmagic) {
+        case LIB_SMB_UNINIIALIZED:
+            return LIB_SMB_UNINIIALIZED;
+        break;
+        case LIB_SMB_BUSY:
+            return LIB_SMB_BUSY;
+        break;
+        case LIB_SMB_READY:
+            return LIB_SMB_READY;
+        break;
+        case LIB_SMB_NOT_READY:
+            return LIB_SMB_NOT_READY;
+        break;
+        default:
+            return LIB_SMB_UNKNOWN;
+        break;
     }
     return LIB_SMB_UNKNOWN;
 }

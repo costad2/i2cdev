@@ -803,6 +803,9 @@ static int parse_mux_name(const char *name, int *parent, int *channel)
 
 static int sysfs_i2c_device_selector(const struct dirent *ent)
 {
+    if (!ent) {
+        return 0;
+    }
     if (ent->d_name[0] == '.') { /* skip hidden entries */
         return 0;
     } else if (isdigit(ent->d_name[0])) {
@@ -817,6 +820,9 @@ static int sysfs_i2c_device_selector(const struct dirent *ent)
 
 static int sysfs_i2c_bus_selector(const struct dirent *ent)
 {
+    if (!ent) {
+        return 0;
+    }
     if (ent->d_name[0] == '.') { /* skip hidden entries */
         return 0;
     } else if ((strncmp(ent->d_name, "i2c-", 4)) == 0) {
@@ -916,12 +922,14 @@ static int sysfs_read_i2c_dev_bus_adapter(dev_bus_adapter *adapter,
     const char *attrp = NULL;
     bool dev_is_mux = false;
     char *endptr = NULL;
+    char char_dev_name[20];
     int err = 0;
     int ret = 0;
     int bus = -1;
     int parent_mux_bus = BUS_NR_INVALID;
     int parent_bus = BUS_NR_INVALID;
     int channel = -1;
+    struct stat st;
 
     if ((!adapter) || (!device) || (!attr)) {
         return -EINVAL;
@@ -984,6 +992,18 @@ static int sysfs_read_i2c_dev_bus_adapter(dev_bus_adapter *adapter,
     adapter->i2c_adapt.fd = -1;
     adapter->i2c_adapt.name = name;
     adapter->i2c_adapt.prev_addr = -1;
+
+    err = snprintf(char_dev_name, sizeof(char_dev_name), "/dev/i2c-%d", adapter->nr);
+    if (err < 0) {
+        goto init;
+    } else if (stat(char_dev_name, &st) < 0) {
+        goto init;
+    } else {
+        adapter->i2c_adapt.char_dev_uid = st.st_ino;
+        adapter->i2c_adapt.char_dev = st.st_dev;
+    }
+
+init:
 
     LIST_INIT(&adapter->children);
     LIST_INIT(&adapter->user_clients);

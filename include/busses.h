@@ -97,7 +97,6 @@ typedef struct smbus_i2c_adapter {
 
     int fd; /* open file descriptor: /dev/i2c-?, or -1 */
 
-    char *char_dev_name;
     dev_t char_dev;
     ino_t char_dev_uid;
 
