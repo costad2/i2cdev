@@ -19,7 +19,7 @@
 #include "common.h"
 #include "i2c-error.h"
 
-#include <i2c-uapi.h>
+#include <libi2cdev.h>
 #include <syslog.h>
 
 static void devi2c_log_internal(SMBusDevice *devi2c, int priority, const char *format, ...) __attribute__((format(printf,3,4)));

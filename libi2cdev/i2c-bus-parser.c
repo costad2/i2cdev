@@ -1274,7 +1274,7 @@ exit_free:
  * Gather All i2c device bus information
  * @return negative errno on failure else zero on success
  */
-int gather_i2c_dev_busses(void)
+extern int gather_i2c_dev_busses(void)
 {
 
     int err = 0;

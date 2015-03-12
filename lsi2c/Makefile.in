@@ -94,14 +94,14 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_lsi2c_OBJECTS = lsi2c-lsi2c.$(OBJEXT)
 lsi2c_OBJECTS = $(am_lsi2c_OBJECTS)
-lsi2c_LDADD = $(LDADD)
+lsi2c_DEPENDENCIES = $(top_srcdir)/libi2cdev/libi2cdev.a
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
 lsi2c_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(lsi2c_CFLAGS) $(CFLAGS) \
-	$(lsi2c_LDFLAGS) $(LDFLAGS) -o $@
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -288,15 +288,14 @@ top_srcdir = @top_srcdir@
 # replaced by '_'. So a.out becomes a_out and the appropriate suffex added.
 # '_SOURCES' for example.
 
-# Sources for the a.out 
+# Sources for the lsi2c 
 lsi2c_SOURCES = lsi2c.c
 
-# Linker options for a.out
-lsi2c_LDFLAGS = -fPIC $(top_srcdir)/libi2cdev/libi2cdev.la
+# Linker options for lsi2c
+lsi2c_LDADD = $(top_srcdir)/libi2cdev/libi2cdev.a
 
-# Compiler options for a.out
-lsi2c_CFLAGS = -I$(top_srcdir)/include -std=c11
-lsi2c_CPPFLAGS = -I$(top_srcdir)/include -std=c++11
+# Compiler options for lsi2c
+lsi2c_CFLAGS = -I$(top_srcdir)/include -std=c99 -fPIC
 all: all-am
 
 .SUFFIXES:
@@ -415,18 +414,18 @@ distclean-compile:
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
 lsi2c-lsi2c.o: lsi2c.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lsi2c_CPPFLAGS) $(CPPFLAGS) $(lsi2c_CFLAGS) $(CFLAGS) -MT lsi2c-lsi2c.o -MD -MP -MF $(DEPDIR)/lsi2c-lsi2c.Tpo -c -o lsi2c-lsi2c.o `test -f 'lsi2c.c' || echo '$(srcdir)/'`lsi2c.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lsi2c_CFLAGS) $(CFLAGS) -MT lsi2c-lsi2c.o -MD -MP -MF $(DEPDIR)/lsi2c-lsi2c.Tpo -c -o lsi2c-lsi2c.o `test -f 'lsi2c.c' || echo '$(srcdir)/'`lsi2c.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lsi2c-lsi2c.Tpo $(DEPDIR)/lsi2c-lsi2c.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lsi2c.c' object='lsi2c-lsi2c.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lsi2c_CPPFLAGS) $(CPPFLAGS) $(lsi2c_CFLAGS) $(CFLAGS) -c -o lsi2c-lsi2c.o `test -f 'lsi2c.c' || echo '$(srcdir)/'`lsi2c.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lsi2c_CFLAGS) $(CFLAGS) -c -o lsi2c-lsi2c.o `test -f 'lsi2c.c' || echo '$(srcdir)/'`lsi2c.c
 
 lsi2c-lsi2c.obj: lsi2c.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lsi2c_CPPFLAGS) $(CPPFLAGS) $(lsi2c_CFLAGS) $(CFLAGS) -MT lsi2c-lsi2c.obj -MD -MP -MF $(DEPDIR)/lsi2c-lsi2c.Tpo -c -o lsi2c-lsi2c.obj `if test -f 'lsi2c.c'; then $(CYGPATH_W) 'lsi2c.c'; else $(CYGPATH_W) '$(srcdir)/lsi2c.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lsi2c_CFLAGS) $(CFLAGS) -MT lsi2c-lsi2c.obj -MD -MP -MF $(DEPDIR)/lsi2c-lsi2c.Tpo -c -o lsi2c-lsi2c.obj `if test -f 'lsi2c.c'; then $(CYGPATH_W) 'lsi2c.c'; else $(CYGPATH_W) '$(srcdir)/lsi2c.c'; fi`
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lsi2c-lsi2c.Tpo $(DEPDIR)/lsi2c-lsi2c.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lsi2c.c' object='lsi2c-lsi2c.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lsi2c_CPPFLAGS) $(CPPFLAGS) $(lsi2c_CFLAGS) $(CFLAGS) -c -o lsi2c-lsi2c.obj `if test -f 'lsi2c.c'; then $(CYGPATH_W) 'lsi2c.c'; else $(CYGPATH_W) '$(srcdir)/lsi2c.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lsi2c_CFLAGS) $(CFLAGS) -c -o lsi2c-lsi2c.obj `if test -f 'lsi2c.c'; then $(CYGPATH_W) 'lsi2c.c'; else $(CYGPATH_W) '$(srcdir)/lsi2c.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

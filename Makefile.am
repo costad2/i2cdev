@@ -1,1 +1,1 @@
-SUBDIRS=libi2cdev lsi2c include 
+SUBDIRS = libi2cdev include lsi2c 

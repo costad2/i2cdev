@@ -31,7 +31,7 @@
 #include <linux/types.h>
 
 #include <busses.h>
-#include <i2c-uapi.h>
+#include <libi2cdev.h>
 #include <i2c-error.h>
 #include <i2c/smbus.h>
 

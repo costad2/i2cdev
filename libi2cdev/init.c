@@ -41,8 +41,6 @@
 #include "data.h"
 #include "busses.h"
 
-#include "../version.h"
-
 #ifndef OVERRIDE_ETCDIR
 #define ETCDIR "/etc"
 #else
@@ -61,7 +59,6 @@
 int i2c_dev_verbose = 0; /* Show detailed information */
 int i2cdev_rescan_count = 0;
 
-const char *libi2cdiscov_version = LIBI2CDEV_VERSION;
 const char *stdin_config_file_name = NULL;
 
 char **dev_config_files = NULL;

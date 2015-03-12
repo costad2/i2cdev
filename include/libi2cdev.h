@@ -1,5 +1,5 @@
 /**
- * @file i2c-uapi.h
+ * @file libi2cdev.h
  * @author Danielle Costantino <dcostantino@vmem.com>
  * @copyright Violin Memory, Inc, 2014
  *
@@ -36,6 +36,16 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/syslog.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+/* libi2cdev API version define, first digit is the major version (changed
+   when the API + ABI breaks), the third digit is incremented to track small
+   API additions like new flags / enum values. The second digit is for tracking
+   larger additions like new methods. */
+#define I2CDDEV_API_VERSION       0x110
 
 extern const char *libi2cdev_version;
 
@@ -427,5 +437,9 @@ extern int dev_i2c_read_data(SMBusDevice *client, uint8_t length,
  */
 extern int dev_i2c_write_data(SMBusDevice *client, uint8_t length,
         uint8_t *data);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* LIBI2CDEV_H */

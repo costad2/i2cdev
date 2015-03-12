@@ -5,7 +5,28 @@
  * @brief Linux tool for I2C and SMBus device and adapter configuration.
  */
 
+/*******************************************************************************
+ * Copyright (C) 2015 Danielle Costantino <danielle.costantino@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA.
+ *
+ * *******************************************************************************/
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE 1
+#endif /* _GNU_SOURCE */
 
 #include <unistd.h>
 #include <limits.h>
@@ -65,8 +86,8 @@ static void print_long_help(void)
 
 static void print_version(void)
 {
-    printf("%s version, libi2cdiscov version %s, built %s %s\n", program_name,
-            libi2cdiscov_version, __TIME__, __DATE__);
+    printf("%s version, libi2cdev version %s, built %s %s\n", program_name,
+            libi2cdev_version, __TIME__, __DATE__);
 }
 
 static int get_and_print_adapter_functionality(dev_bus_adapter *adapter)
@@ -461,7 +482,8 @@ done:
     i2cdev_cleanup();
 
     if (err < 0) {
-        error(EXIT_FAILURE, -err, "lsi2c exited with error");
+        fprintf(stderr, "lsi2c exited with error: %s", strerror(-err));
+        exit(EXIT_FAILURE);
     }
-    exit(err);
+    exit(EXIT_SUCCESS);
 }

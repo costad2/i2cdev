@@ -10,12 +10,11 @@ bin_PROGRAMS=lsi2c
 # replaced by '_'. So a.out becomes a_out and the appropriate suffex added.
 # '_SOURCES' for example.
 
-# Sources for the a.out 
-lsi2c_SOURCES= lsi2c.c
+# Sources for the lsi2c 
+lsi2c_SOURCES = lsi2c.c
 
-# Linker options for a.out
-lsi2c_LDFLAGS = -fPIC $(top_srcdir)/libi2cdev/libi2cdev.la
+# Linker options for lsi2c
+lsi2c_LDADD = $(top_srcdir)/libi2cdev/libi2cdev.a
 
-# Compiler options for a.out
-lsi2c_CFLAGS = -I$(top_srcdir)/include -std=c11
-lsi2c_CPPFLAGS = -I$(top_srcdir)/include -std=c++11
+# Compiler options for lsi2c
+lsi2c_CFLAGS = -I$(top_srcdir)/include -std=c99 -fPIC

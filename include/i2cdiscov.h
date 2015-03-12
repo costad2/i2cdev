@@ -10,7 +10,7 @@
 #define LIB_I2CDISCOV_H
 
 #include <stdbool.h>
-#include <i2c-uapi.h>
+#include <libi2cdev.h>
 #include "busses.h"
 
 /*** Options ***/
@@ -18,16 +18,6 @@
 extern int i2c_dev_verbose;
 
 /*** Exports ***/
-
-/* Publicly accessible library functions */
-
-/* libi2cdiscov API version define, first digit is the major version (changed
-   when the API + ABI breaks), the third digit is incremented to track small
-   API additions like new flags / enum values. The second digit is for tracking
-   larger additions like new methods. */
-#define I2CDISCOV_API_VERSION		0x010
-
-extern const char *libi2cdiscov_version;
 extern const char *stdin_config_file_name;
 
 extern int print_devbus_tree(void);

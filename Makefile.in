@@ -308,7 +308,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = libi2cdev lsi2c include 
+SUBDIRS = libi2cdev include lsi2c 
 all: all-recursive
 
 .SUFFIXES:
