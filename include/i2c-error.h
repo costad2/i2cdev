@@ -30,6 +30,7 @@ extern "C" {
 /* Magic number definition must be in sync with enum below */
 #define LIB_SMB_I2C_MAGIC   0x736D6232
 #define LIB_SMB_I2C_POISON  0x6E736D62
+
 /* This enum defines the library's internal state */
 typedef enum i2csmbmagic_e {
     LIB_SMB_UNINIIALIZED = 0,
@@ -45,17 +46,6 @@ extern enum i2csmbmagic_e *p_i2csmbmagic_state;
    errnum may be negative (the corresponding positive error is returned).
    You may not modify the result! */
 const char *i2cdev_strerror(int errnum);
-
-/* These functions are called when a parse error is detected. */
-extern void (*dev_parse_error_wfn) (const char *err, const char *filename, int lineno);
-
-/* This function is called when an immediately fatal error (like no
-   memory left) is detected. Give it a new value, and your own function
-   is called instead of the default (which prints to stderr and ends
-   the program). Never let it return! */
-extern void (*dev_fatal_error) (const char *proc, const char *err);
-
-extern FILE *libi2cdev_stderr;
 
 extern void libi2cdev_invalidate_cache(void);
 extern void libi2cdev_clear_invalidate_flag(void);
@@ -73,7 +63,6 @@ static inline bool check_libi2cdev_ready(void) {
         return (*p_i2csmbmagic_state == LIB_SMB_I2C_MAGIC)? true : false;
     }
 }
-
 
 #ifdef __cplusplus
 }

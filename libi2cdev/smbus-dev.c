@@ -6,8 +6,6 @@
  * @brief libi2cdev SMBus access functions
  */
 
-#define _GNU_SOURCE 1
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
@@ -176,20 +174,17 @@ static int i2c_check_client_addr_validity(SMBusDevice *client)
     return 0;
 }
 
-#define MAXPATH 16
-
 int dev_i2c_open_i2c_dev(SMBusAdapter *adapter)
 {
     int err = 0;
-    char filename[MAXPATH];
+    char filename[NAME_MAX];
     struct stat st;
 
-    if (!adapter) {
+    if (!adapter)
         return -EINVAL;
-    }
-    if ((adapter->nr < 0) || (adapter->nr > 255)) {
+
+    if (adapter->nr < 0 || adapter->nr > 255)
         return -ECHRNG;
-    }
 
     err = snprintf(filename, sizeof(filename), "/dev/i2c-%d", adapter->nr);
     if (err < 0) {
@@ -215,38 +210,35 @@ int dev_i2c_open_i2c_dev(SMBusAdapter *adapter)
      * processes access to the same i2c-dev. This is needed because of
      * how the kernel i2c ioctl interfaces with the open file descriptor. */
     adapter->fd = open(filename, (O_RDWR | O_NONBLOCK | O_CLOEXEC));
-
     if (adapter->fd < 0) {
         err = -errno;
     } else {
         err = 0;
     }
-    return (err);
+    return err;
 }
 
 int dev_i2c_get_functionality(SMBusAdapter *adapter)
 {
     int ret = 0;
-    if (!adapter) {
+    if (!adapter)
         return -EINVAL;
-    }
-    if (ioctl(adapter->fd, I2C_FUNCS, &adapter->funcs) < 0) {
+    if (ioctl(adapter->fd, I2C_FUNCS, &adapter->funcs) < 0)
         ret = -errno;
-    }
+
     return ret;
 }
 
 int dev_i2c_set_slave_addr(SMBusAdapter *adapter, int address, int force)
 {
     int ret = 0;
-    if (!adapter) {
+    if (!adapter)
         return -EINVAL;
-    }
     /* With force, let the user read from/write to the registers
      even when a driver is also running */
-    if (ioctl(adapter->fd, force ? I2C_SLAVE_FORCE : I2C_SLAVE, address) < 0) {
+    if (ioctl(adapter->fd, force ? I2C_SLAVE_FORCE : I2C_SLAVE, address) < 0)
         ret = -errno;
-    }
+
     return ret;
 }
 
@@ -256,15 +248,13 @@ int dev_i2c_set_adapter_timeout(SMBusAdapter *adapter, int timeout_ms)
     int ret = 0;
     unsigned long timeout = DIV_ROUND_CLOSEST(timeout_ms, 10);
 
-    if (timeout == 0) {
+    if (timeout == 0)
         return -EINVAL;
-    }
-    if (!adapter) {
+    if (!adapter)
         return -ENODEV;
-    }
-    if (ioctl(adapter->fd, I2C_TIMEOUT, timeout) < 0) {
+    if (ioctl(adapter->fd, I2C_TIMEOUT, timeout) < 0)
         ret = -errno;
-    }
+
     return ret;
 }
 
@@ -273,12 +263,11 @@ int dev_i2c_set_adapter_retries(SMBusAdapter *adapter, unsigned long retries)
 {
     int ret = 0;
 
-    if (!adapter) {
+    if (!adapter)
         return -ENODEV;
-    }
-    if (ioctl(adapter->fd, I2C_RETRIES, retries) < 0) {
+    if (ioctl(adapter->fd, I2C_RETRIES, retries) < 0)
         ret = -errno;
-    }
+
     return ret;
 }
 
@@ -342,9 +331,8 @@ SMBusAdapter *dev_i2c_new_adapter(dev_bus_adapter *adapter, SMBusDevice *client)
     int err = 0;
     SMBusAdapter *adap = NULL;
 
-    if (!adapter) {
+    if (!adapter)
         return NULL;
-    }
 
     adap = &adapter->i2c_adapt;
 
@@ -394,9 +382,8 @@ int dev_i2c_close(SMBusDevice *client)
 {
     SMBusAdapter *adap = NULL;
 
-    if (!client) {
+    if (!client)
         return -EINVAL;
-    }
 
     /** @note not having an adapter (the device was never opened with dev_i2c_open ) is not an error we should correct */
     adap = client->adapter;
@@ -416,9 +403,9 @@ int dev_i2c_close(SMBusDevice *client)
  */
 void dev_i2c_delete(SMBusDevice *client)
 {
-    if (!client) {
+    if (!client)
         return;
-    }
+
     dev_i2c_close(client);
 
     /* If there was an adapter found for this device de-register it from that adapter */
@@ -443,9 +430,9 @@ int dev_i2c_open(SMBusDevice *client)
     bool need_adapter = false;
     bool cache_is_valid = false;
 
-    if (!client) {
+    if (!client)
         return -ENODEV;
-    }
+
     if (!client->path) {
         devi2c_err(client, "ERROR: client has no path specified! - %s", strerror(-ret));
         return -EINVAL;
@@ -495,11 +482,8 @@ int dev_i2c_open(SMBusDevice *client)
     }
 
 exit_return:
-
     return ret;
-
 fatal_error:
-
     devi2c_err(client, "During device lookup libi2cdev failed to update cache - %s", strerror(-scan_ret));
     return scan_ret;
 }
@@ -521,13 +505,6 @@ SMBusAdapter *dev_i2c_open_adapter(SMBusDevice *client)
     }
 }
 
-static SMBusDevice dummy_client = {
-    .addr = 0,
-    .name = "dummy",
-    .force = 1,
-    .adapter = NULL,
-};
-
 #define MODE_AUTO   0
 #define MODE_QUICK  1
 #define MODE_READ   2
@@ -547,6 +524,12 @@ int32_t dev_i2c_smbus_probe(uint8_t addr, const char *path, int mode)
     __s32 ret = 0;
     int cmd = 0;
     dev_bus_adapter *adapter = NULL;
+    SMBusDevice dummy_client = {
+        .addr = 0,
+        .name = "dummy",
+        .force = 1,
+        .adapter = NULL,
+    };
     SMBusDevice *client = &dummy_client;
 
     if (!path) {
@@ -1101,11 +1084,12 @@ error_exit:
 }
 
 
-static int i2c_transfer(SMBusAdapter *adap, struct i2c_msg *msgs, int num)
+static int i2c_transfer(SMBusAdapter *adap, struct i2c_msg *msgs, unsigned int num)
 {
     int err = 0;
 
-    assert(adap);
+    if (!adap || !msgs || !num)
+    	return -EINVAL;
 
     struct i2c_rdwr_ioctl_data msgset = {
         .msgs = msgs,

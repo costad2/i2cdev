@@ -30,13 +30,10 @@ extern size_t adapter_global_count;
 	(el), &dev_config_files, &dev_config_files_count, \
 	&dev_config_files_max, sizeof(char *))
 
-int dev_read_one_sysfs_chip(const char *dev_path, const char *dev_name);
-
 void dev_free_bus_id(dev_bus_id *bus);
 void dev_free_chip(dev_chip **chip);
 void dev_free_chip_vals(dev_chip *chip);
 
-void free_adapter(dev_bus_adapter **adapter);
 void free_adapter_val(dev_bus_adapter **adapter);
 void free_adapter_list(dev_bus_adapter_head *list);
 void free_dev_chip_list(dev_chip_head *list);

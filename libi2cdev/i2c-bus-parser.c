@@ -6,7 +6,6 @@
  * @brief Gather and Print the installed i2c busses and devices
  * for most modern kernels (2.6+) through data collected from /sys.
  */
-
 #define _GNU_SOURCE 1
 
 #include <linux/limits.h> /* for PATH_MAX */
@@ -31,8 +30,6 @@
 #include <error.h>
 #include <alloca.h>
 #include <search.h>
-
-#include <busses.h>
 
 #include "common.h"
 #include "sysfs.h"
@@ -142,16 +139,12 @@ static int foreach_devbus_tree(dev_bus_adapter_head *root,
         children = &dev->children;
 
         err = func(dev);
-
-        if (err < 0) {
-            dev_parse_error_wfn(strerror(-err), __FILE__, __LINE__);
-        }
+        if (err < 0)
+        	devi2c_warn(NULL, "failed to discover adapters: %s", strerror(-err));
 
         err = foreach_devbus_tree(children, func);
-
-        if (err < 0) {
-            dev_parse_error_wfn(strerror(-err), __FILE__, __LINE__);
-        }
+        if (err < 0)
+        	devi2c_warn(NULL, "failed to discover adapters: %s", strerror(-err));
     }
     return err;
 }
@@ -680,7 +673,6 @@ static int adapter_tree_build(dev_bus_adapter_head *search,
     node = LIST_FIRST(search);
 
     while (NULL != (bus_tmp = bus_parent_nr_lookup(BUS_NR_ROOT, node))) {
-
         int cmp = 0;
 
         bus_list_del_init(bus_tmp);
@@ -974,7 +966,6 @@ static int sysfs_read_i2c_dev_bus_adapter(dev_bus_adapter *adapter,
     adapter->parent_name = get_parent_dev_name(link_path);
 
     ret = dev_parse_parent_i2c_nr(adapter->parent_name, (&parent_bus));
-
     adapter->parent_is_adapter = (ret < 0) ? false : true;
     adapter->parent_id = parent_bus;
     adapter->path = BUS_PATH_ANY;
@@ -1004,20 +995,17 @@ static int sysfs_read_i2c_dev_bus_adapter(dev_bus_adapter *adapter,
     }
 
 init:
-
     LIST_INIT(&adapter->children);
     LIST_INIT(&adapter->user_clients);
     SLIST_INIT(&adapter->clients);
     init_bus_list(&(adapter->node));
-
 exit_free:
-
     if (err < 0) {
         free(name);
         name = NULL;
         free(link_path);
         link_path = NULL;
-        dev_parse_error_wfn(strerror(-err), __FILE__, __LINE__);
+        devi2c_warn(NULL, "failed to discover adapters: %s", strerror(-err));
     }
     return err;
 }
@@ -1146,16 +1134,13 @@ static int gather_i2c_adapters_devices(dev_bus_adapter *adapter)
     return count;
 
 exit_free:
-
     if (dir) {
         closedir(dir);
     }
-
     if (err < 0) {
         free_dev_chip_list(&adapter->clients);
-        dev_parse_error_wfn(strerror(-err), __FILE__, __LINE__);
+        devi2c_warn(NULL, "failed to discover adapters: %s", strerror(-err));
     }
-
     return err;
 }
 
@@ -1180,14 +1165,12 @@ static ssize_t i2c_sysfs_gather_adapters(dev_bus_adapter ***list)
     if (!list) {
         return -EINVAL;
     }
-    assert(*list == NULL);
 
     if (!sysfs_mount) {
         return -ENOENT;
     }
 
-    path_off = snprintf(path, sizeof(path), "%s/bus/%s/devices", sysfs_mount,
-            bus_type);
+    path_off = snprintf(path, sizeof(path), "%s/bus/%s/devices", sysfs_mount, bus_type);
     if (path_off >= (int) sizeof(path)) {
         return -EINVAL;
     }
@@ -1198,7 +1181,6 @@ static ssize_t i2c_sysfs_gather_adapters(dev_bus_adapter ***list)
         devi2c_err(NULL, "scandir failed!- %s", strerror(-err));
         return err;
     } else {
-
         count = (size_t) n;
         if (count == 0) {
             err = 0;
@@ -1212,7 +1194,6 @@ static ssize_t i2c_sysfs_gather_adapters(dev_bus_adapter ***list)
         }
         i = 0;
         for (size_t h = 0; h < count; ++h) {
-
             adapters[i] = calloc(1, sizeof(*adapters[i]));
             if (adapters[i] == NULL) {
                 err = -ENOMEM;
@@ -1241,7 +1222,6 @@ static ssize_t i2c_sysfs_gather_adapters(dev_bus_adapter ***list)
     }
 
 exit_free:
-
     /* Free memory allocated by scandir() */
     for (size_t s = 0; s < count; ++s) {
         if (namelist[s] != NULL) {
@@ -1250,7 +1230,6 @@ exit_free:
         }
     }
     free(namelist);
-
     if (err < 0) {
         for (int r = 0; r < num; ++r) {
             if (adapters[r] != NULL) {
@@ -1289,7 +1268,6 @@ extern int gather_i2c_dev_busses(void)
 
     /* look in sysfs */
     count = i2c_sysfs_gather_adapters(&adapters);
-
     if (count < 0) {
         err = count;
         devi2c_notice(NULL, "Error reading i2c adapters! - %s", strerror(-err));
@@ -1304,14 +1282,12 @@ extern int gather_i2c_dev_busses(void)
     }
 
     err = adapter_tree_build(p_head_temp, dev_bus_list_headp);
-
     if (err < 0) {
         devi2c_notice(NULL, "Failed to gather adapter roots - %s", strerror(-err));
         return err;
     }
 
     err = generate_bus_paths(dev_bus_list_headp);
-
     if (err < 0) {
         devi2c_notice(NULL, "Failed to generate adapter bus paths - %s", strerror(-err));
         return err;
@@ -1330,10 +1306,8 @@ extern int gather_i2c_dev_busses(void)
     err = 0;
 
 done:
-
     adapter_global_array = adapters;
     adapter_global_count = (count >= 0) ? (size_t)count : 0 ;
-
     if (i2c_dev_verbose > 2) {
         devi2c_debug(NULL, "found %d i2c adapters", count);
     }

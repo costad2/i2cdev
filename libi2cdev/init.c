@@ -4,9 +4,9 @@
  *
  * @brief libi2cdev initialization and cleanup routines
  */
-
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE 1
-
+#endif
 #include <linux/limits.h> /* for PATH_MAX */
 
 #include <locale.h>
@@ -53,7 +53,7 @@
 #define DEFAULT_CONFIG_FILE	ETCDIR"/i2cdiscov.conf"
 #define DEFAULT_CONFIG_DIR	ETCDIR"/i2cdiscov.d"
 
-#define BUFLEN 512
+#define BUFLEN 1024
 #define I2C_DEV_MOD_NAME "i2c_dev"
 
 int i2c_dev_verbose = 0; /* Show detailed information */
@@ -92,6 +92,7 @@ static int parse_config_file(FILE *input, const char *name);
 static int parse_config(FILE *input, const char *name)
 {
     char *name_copy = NULL;
+    int new_max_el;
 
     if (name != NULL) {
         /* Record configuration file name for error reporting */
@@ -99,14 +100,32 @@ static int parse_config(FILE *input, const char *name)
         if (name_copy == NULL) {
             return -ENOMEM;
         }
-        dev_add_config_files(&name_copy);
+
+        if (dev_config_files_count + 1 > dev_config_files_max) {
+            new_max_el = dev_config_files_max *= 2;
+            dev_config_files = realloc(dev_config_files, (size_t) new_max_el * sizeof(char *));
+            if (!dev_config_files)
+                perror("realloc() Allocating new elements");
+            dev_config_files_max = new_max_el;
+        }
+        memcpy(((char *) dev_config_files) + dev_config_files_count * (int) sizeof(char *), name_copy, (size_t) sizeof(char *));
+        (dev_config_files_count)++;
+
     } else if (stdin_config_file_name != NULL) {
         /* Record configuration file name for error reporting */
         name_copy = strdup(stdin_config_file_name);
         if (name_copy == NULL) {
             return -ENOMEM;
         }
-        dev_add_config_files(&name_copy);
+        if (dev_config_files_count + 1 > dev_config_files_max) {
+            new_max_el = dev_config_files_max *= 2;
+            dev_config_files = realloc(dev_config_files, (size_t) new_max_el * sizeof(char *));
+            if (!dev_config_files)
+                perror("realloc() Allocating new elements");
+            dev_config_files_max = new_max_el;
+        }
+        memcpy(((char *) dev_config_files) + dev_config_files_count * (int) sizeof(char *), name_copy, (size_t) sizeof(char *));
+        (dev_config_files_count)++;
     } else {
         name_copy = NULL;
     }
@@ -138,7 +157,6 @@ static char *clean_line(const char *line)
 
     /* Find the end of the token.  */
     end = strpbrk(begin, "#\t \n");
-
     if (end != NULL) {
         *end = '\0';
     }
@@ -171,11 +189,8 @@ static int parse_config_file(FILE *input, const char *name)
     int ret = 0;
     dev_config_chip *temp_chip = NULL;
 
-    if (!input) {
+    if (!input)
         return -ENOENT;
-    }
-
-    line_count = 0;
 
     while ((read_path = getline(&line, &len, input)) != -1) {
         char *line_entry = NULL;
@@ -285,7 +300,7 @@ int try_load_i2c_dev_mod(void)
 {
     int err = 0, loaded = 0;
     char errbuf[BUFLEN] = "";
-#ifdef USE_LIBKMOD
+#ifdef _LIBKMOD_
     int flags = 0;
     struct kmod_ctx *ctx;
     struct kmod_list *l, *list = NULL;
@@ -324,11 +339,9 @@ int try_load_i2c_dev_mod(void)
     ctx_unref:
     kmod_unref(ctx);
 #else
-
     struct stat st;
 
     err = stat("/sys/class/i2c-dev", &st);
-
     if (err < 0) {
         if (errno != ENOENT) {
             err = -errno;
@@ -522,8 +535,6 @@ int i2cdev_init(FILE *input)
 
     if (init_once == false) {
 
-        libi2cdev_stderr = stderr;
-
         LIST_INIT(&dev_bus_list_head);
         dev_bus_list_headp = &dev_bus_list_head;
 
@@ -568,7 +579,6 @@ int i2cdev_init(FILE *input)
         goto exit_cleanup;
     }
     set_libi2cdev_state(LIB_SMB_READY);
-
 
     // TODO: possibly move out of the init function (requires initialization aka libi2cdev_state = LIB_SMB_READY)
     dev_for_all_chips_match_config(p_dev_config_list_head);
@@ -745,7 +755,6 @@ static int remove_sysfs_i2c_device(dev_chip *chip)
 
     /* Close on Exit for kernel sysfs write calls */
     if (NULL != (f = fopen(path, "w"))) {
-
         res = fprintf(f, "0x%02hx", chip->addr);
         if (res < 0) {
             ret = -errno;
@@ -788,13 +797,12 @@ int initialize_all_config_chips(void)
             }
 
             ret = dev_new_sysfs_i2c_device(p_info);
-
             if (ret < 0) {
-                dev_parse_error_wfn(strerror(-ret), __FILE__, __LINE__);
+            	devi2c_warn(NULL, "Failed to add i2c device: \'%s\' - %s", p_info->name, strerror(-ret));
             } else {
                 ret = i2cdev_rescan();
                 if (ret < 0) {
-                    dev_parse_error_wfn(strerror(-ret), __FILE__, __LINE__);
+                	devi2c_warn(NULL, "Failed to rescan i2c devices! - %s", strerror(-ret));
                     return ret;
                 }
                 dev_for_all_chips_match_config(p_dev_config_list_head);
@@ -814,20 +822,18 @@ int remove_adapters_config_chips(dev_bus_adapter *adapter)
             p_dev_config_list_head);
 
     if (match != NULL) {
-
         if (i2c_dev_verbose) {
             devi2c_debug(NULL, "Found chip in configuration spec initialized:");
             print_dev_chip(match);
         }
 
         ret = remove_sysfs_i2c_device(match);
-
         if (ret < 0) {
-            dev_parse_error_wfn(strerror(-ret), __FILE__, __LINE__);
+        	devi2c_warn(NULL, "Failed to remove i2c device: \'%s\' - %s", match->name, strerror(-ret));
         } else {
             ret = i2cdev_rescan();
             if (ret < 0) {
-                dev_parse_error_wfn(strerror(-ret), __FILE__, __LINE__);
+            	devi2c_warn(NULL, "Failed to rescan i2c devices! - %s", strerror(-ret));
             }
             dev_for_all_chips_match_config(p_dev_config_list_head);
         }
@@ -864,11 +870,11 @@ int remove_all_config_chips(void)
             ret = dev_remove_sysfs_i2c_device(p_info);
 
             if (ret < 0) {
-                dev_parse_error_wfn(strerror(-ret), __FILE__, __LINE__);
+            	devi2c_warn(NULL, "Failed to remove i2c device: \'%s\' - %s", p_info->name, strerror(-ret));
             } else {
                 ret = i2cdev_rescan();
                 if (ret < 0) {
-                    dev_parse_error_wfn(strerror(-ret), __FILE__, __LINE__);
+                	devi2c_warn(NULL, "Failed to rescan i2c devices! - %s", strerror(-ret));
                     return ret;
                 }
                 dev_for_all_chips_match_config(p_dev_config_list_head);
@@ -905,9 +911,11 @@ void i2cdev_cleanup(void)
         dev_config_files[i] = NULL;
     }
 
-    dev_free_array(&dev_config_files, &dev_config_files_count,
-            &dev_config_files_max);
-
+    if (dev_config_files)
+    	free(dev_config_files);
+    dev_config_files = NULL;
+	dev_config_files_count = 0;
+	dev_config_files_max = 0;
     stdin_config_file_name = NULL;
 
     free_adapter_list(dev_bus_list_headp);

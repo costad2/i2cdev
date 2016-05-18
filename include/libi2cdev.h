@@ -33,8 +33,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <linux/types.h>
-#include <sys/types.h>
-#include <sys/queue.h>
 #include <sys/syslog.h>
 
 #ifdef __cplusplus
@@ -45,7 +43,7 @@ extern "C" {
    when the API + ABI breaks), the third digit is incremented to track small
    API additions like new flags / enum values. The second digit is for tracking
    larger additions like new methods. */
-#define I2CDDEV_API_VERSION       0x110
+#define I2CDDEV_API_VERSION       0x120
 
 extern const char *libi2cdev_version;
 
@@ -172,10 +170,17 @@ extern void i2cdev_cleanup(void);
 /**
  * Type used in defining a logging facility
  * @param devi2c Handle to I2C slave device or NULL
- * @param priority syslog priority value
- * @param format Format string
+ * @param[in] priority: syslog priority value
+ * @param[in] file: __FILE__
+ * @param[in] line: __LINE__
+ * @param[in] func: __func__
+ * @param[in] format: Format string
  */
-typedef void (*devi2c_log_func_t)(SMBusDevice *devi2c, int priority, const char *format, ...);
+typedef void (*devi2c_log_func_t)(SMBusDevice *devi2c, int priority,
+		const char *file, unsigned int line, const char *func,
+		const char *format, ...) __attribute__((format(printf,6,7)));
+
+extern devi2c_log_func_t devi2c_log;
 
 /**
  * Used to define a custom logging function
@@ -183,21 +188,71 @@ typedef void (*devi2c_log_func_t)(SMBusDevice *devi2c, int priority, const char 
  */
 extern void devi2c_set_logging_function(devi2c_log_func_t func);
 
-extern devi2c_log_func_t devi2c_log;
+/**
+ * Set logging default priority for both local and syslog
+ * also reset default logging function
+ * @param[in] pri
+ */
+extern void devi2c_logging_init(unsigned int pri);
 
-extern void devi2c_print(SMBusDevice *devi2c, int priority, const char *format, ...) __attribute__((format(printf,3,4)));
+/**
+ * Set the logging level (ignores all messages with lower priority than new_pri)
+ * @param[in] new_pri
+ */
+extern void devi2c_log_set_level(unsigned int new_pri);
+
+extern unsigned int devi2c_get_log_level(void);
+
+extern const char *devi2c_get_log_level_string(void);
+
+/**
+ * Log to logfile else stderr
+ * example setup:
+ * @code
+ *  set_logging_function(devi2c_print);
+ * @endcode
+ * @param devi2c Handle or NULL
+ * @param priority syslog priority value
+ * @param file __FILE__
+ * @param line __LINE__
+ * @param func __func__
+ * @param format Format string
+ */
+extern void devi2c_print(SMBusDevice *devi2c, int priority, const char *file,
+		unsigned int line, const char *func, const char *format, ...)
+				__attribute__((format(printf,6,7)));
+
+/**
+ * Log to syslog
+ * example setup:
+ * @code
+ *  set_logging_function(devi2c_syslog);
+ * @endcode
+ * @param devi2c Handle to vimm_db or NULL
+ * @param priority syslog priority value
+ * @param file __FILE__
+ * @param line __LINE__
+ * @param func __func__
+ * @param format Format string
+ */
+extern void devi2c_syslog(SMBusDevice *devi2c, int priority, const char *file,
+		unsigned int line, const char *func, const char *format, ...)
+				__attribute__((format(printf,6,7)));
+
+
+#define devi2c_log_level(devi2c, level, ...)	devi2c_log(devi2c, level, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 
 /*
  * These macros can be used to log information about a specific client device
  * at a specific logging priority
  */
-#define devi2c_err(devi2c, ...)         devi2c_log(devi2c, LOG_ERR, ##__VA_ARGS__)
-#define devi2c_warn(devi2c, ...)        devi2c_log(devi2c, LOG_WARNING, ##__VA_ARGS__)
-#define devi2c_notice(devi2c, ...)      devi2c_log(devi2c, LOG_NOTICE, ##__VA_ARGS__)
-#define devi2c_info(devi2c, ...)        devi2c_log(devi2c, LOG_INFO, ##__VA_ARGS__)
+#define devi2c_err(devi2c, ...)         devi2c_log_level(devi2c, LOG_ERR, ##__VA_ARGS__)
+#define devi2c_warn(devi2c, ...)        devi2c_log_level(devi2c, LOG_WARNING, ##__VA_ARGS__)
+#define devi2c_notice(devi2c, ...)      devi2c_log_level(devi2c, LOG_NOTICE, ##__VA_ARGS__)
+#define devi2c_info(devi2c, ...)        devi2c_log_level(devi2c, LOG_INFO, ##__VA_ARGS__)
 
-#ifdef DEBUG
-#define devi2c_debug(devi2c, ...)     devi2c_log(devi2c, LOG_DEBUG, ##__VA_ARGS__)
+#ifndef NDEBUG
+#define devi2c_debug(devi2c, ...)     devi2c_log_level(devi2c, LOG_DEBUG, ##__VA_ARGS__)
 #else
 static inline void devi2c_debug(SMBusDevice *devi2c, ...)   {}
 #endif

@@ -194,7 +194,18 @@ static int sysfs_read_uevents(char ***uevents, int *count, int *max,
         /* Last byte is a '\n'; chop that off */
         p_line = strchrnul(line, '\n');
         uevent_val = strndup(line, (p_line - line));
-        dev_add_array_el(&uevent_val, uevents, count, max, sizeof(char *));
+
+        int new_max_el;
+
+        if (*count + 1 > *max) {
+            new_max_el = *max *= 2;
+            uevents = realloc(uevents, (size_t) new_max_el * sizeof(char *));
+            if (!uevents)
+                perror("realloc() Allocating new elements");
+            *max = new_max_el;
+        }
+        memcpy(((char *) uevents) + *count * (int) sizeof(char *), uevent_val, (size_t) sizeof(char *));
+        (*count)++;
         free(uevent_val);
     }
     free(line);
@@ -225,7 +236,6 @@ char *sysfs_read_uevent_key_val(const char *syspath, const char *key)
     }
 
 exit_free:
-
     if (uevents) {
         for (; (*uevents != NULL); uevents++) {
             if (*uevents) {

@@ -11,7 +11,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE 1
 #endif /* _GNU_SOURCE */
-
+#include <features.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +19,15 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdbool.h>
+
+/**
+  The semantics of builtin_expect() are that
+  1) its two arguments are long
+  2) it's likely that they are ==
+  Those of our likely(x) are that x can be bool/int/longlong/pointer.
+*/
+#define likely(x)	__builtin_expect(((x) != 0),1)
+#define unlikely(x)	__builtin_expect(((x) != 0),0)
 
 /* These are general purpose functions. They allow you to use variable-
  length arrays, which are extended automatically. A distinction is
@@ -172,13 +181,5 @@ static inline bool sysfs_streq(const char *s1, const char *s2)
     }
     return false;
 }
-
-void dev_malloc_array(void *list, int *num_el, int *max_el,
-        size_t el_size);
-void dev_free_array(void *list, int *num_el, int *max_el);
-void dev_add_array_el(const void *el, void *list, int *num_el,
-        int *max_el, size_t el_size);
-void dev_add_array_els(const void *els, int nr_els, void *list,
-        int *num_el, int *max_el, size_t el_size);
 
 #endif /* _COMMON_H_ */
