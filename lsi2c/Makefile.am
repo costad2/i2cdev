@@ -14,7 +14,7 @@ bin_PROGRAMS=lsi2c
 lsi2c_SOURCES = lsi2c.c
 
 # Linker options for lsi2c
-lsi2c_LDADD = $(top_srcdir)/libi2cdev/libi2cdev.a
+lsi2c_LDADD = $(top_builddir)/libi2cdev/libi2cdev.a
 
 # Compiler options for lsi2c
 lsi2c_CFLAGS = -I$(top_srcdir)/include -std=c99 -fPIC
