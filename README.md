@@ -27,7 +27,15 @@ category has its own sub-directory:
 LICENSE
 -------
 
-	LGPL
+Be aware that some files are released under GPL-2.0-or-later, everything else is
+under LGPL-2.1-or-later.
+
+Files with GPL-2.0-or-later:
+
+* include/libi2cdev.h
+* libi2cdev/smbus.c
+* lsi2c/lsi2c.c
+
 
 INSTALLATION
 ------------
