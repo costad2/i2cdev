@@ -27,7 +27,6 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <error.h>
 #include <alloca.h>
 #include <search.h>
 

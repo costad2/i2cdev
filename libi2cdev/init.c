@@ -16,10 +16,8 @@
 #include <errno.h>
 #include <dirent.h>
 #include <unistd.h>
-#include <error.h>
 #include <limits.h>
 #include <ctype.h>
-#include <error.h>
 #include <fcntl.h>
 #include <assert.h>
 
