@@ -38,7 +38,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <error.h>
 #include <getopt.h>
 #include <stdbool.h>
 
@@ -205,7 +204,8 @@ static int read_config_file(const char *config_file_name)
         if (err < 0) {
             err = -err;
         }
-        error(0, err, "Failed to initialize i2cdevices");
+        fflush(stdout);
+        fprintf(stderr, "Failed to initialize i2cdevices: %s", strerror(err));
         if (config_file) {
             fclose(config_file);
         }

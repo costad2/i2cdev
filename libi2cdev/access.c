@@ -16,7 +16,6 @@
 
 #include "busses.h"
 #include "data.h"
-#include "error.h"
 #include "sysfs.h"
 
 #include "i2cdiscov.h"

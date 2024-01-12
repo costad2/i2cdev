@@ -9,7 +9,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <error.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdarg.h>

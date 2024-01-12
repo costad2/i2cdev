@@ -11,7 +11,6 @@
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
-#include <error.h>
 
 #include <linux/limits.h>
 
